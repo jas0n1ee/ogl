@@ -94,9 +94,9 @@ int main(int argc, char* argv[])
 	
 
 	std::vector<GLuint> Texture;
-	std::vector<std::vector<glm::vec3>>vertices;
-	std::vector<std::vector<glm::vec2>> uvs;
-	std::vector<std::vector<glm::vec3>> normals;
+	std::vector<std::vector<glm::vec3> >vertices;
+	std::vector<std::vector<glm::vec2> > uvs;
+	std::vector<std::vector<glm::vec3> > normals;
 	for (int i = 0; i < frames; i++) {
 		char tex_filename[50];
 		sprintf(tex_filename, "%06d.bmp", i%frames + 1);

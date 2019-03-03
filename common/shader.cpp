@@ -23,17 +23,56 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 	// Read the Vertex Shader code from the file
 	std::string VertexShaderCode;
 	std::ifstream VertexShaderStream(vertex_file_path, std::ios::in);
+	std::stringstream Defalut_vetexShaderCode;
+	std::stringstream Default_FragmentShaderCode;
+	Defalut_vetexShaderCode << "#version 330 core\n\
+\n\
+// Input vertex data, different for all executions of this shader.\n\
+layout(location = 0) in vec3 vertexPosition_modelspace;\n\
+layout(location = 1) in vec2 vertexUV;\n\
+\n\
+// Output data ; will be interpolated for each fragment.\n\
+out vec2 UV;\n\
+\n\
+// Values that stay constant for the whole mesh.\n\
+uniform mat4 MVP;\n\
+\n\
+void main(){\n\
+\n\
+    // Output position of the vertex, in clip space : MVP * position\n\
+    gl_Position =  MVP * vec4(vertexPosition_modelspace,1);\n\
+    \n\
+    // UV of the vertex. No special space for this one.\n\
+    UV = vertexUV;\n\
+}\n\
+\n";
+	Default_FragmentShaderCode << "#version 330 core\n\
+\n\
+// Interpolated values from the vertex shaders\n\
+in vec2 UV;\n\
+\n\
+// Ouput data\n\
+out vec3 color;\n\
+\n\
+// Values that stay constant for the whole mesh.\n\
+uniform sampler2D myTextureSampler;\n\
+\n\
+void main(){\n\
+\n\
+    // Output color = color of the texture at the specified UV\n\
+    color = texture( myTextureSampler, UV ).rgb;\n\
+}\n";
 	if(VertexShaderStream.is_open()){
 		std::stringstream sstr;
 		sstr << VertexShaderStream.rdbuf();
 		VertexShaderCode = sstr.str();
 		VertexShaderStream.close();
 	}else{
-		printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
-		getchar();
-		return 0;
+		VertexShaderCode = Defalut_vetexShaderCode.str();
+		printf("Using default shader\n");
+//		printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_file_path);
+//		getchar();
 	}
-
 	// Read the Fragment Shader code from the file
 	std::string FragmentShaderCode;
 	std::ifstream FragmentShaderStream(fragment_file_path, std::ios::in);
@@ -43,7 +82,10 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 		FragmentShaderCode = sstr.str();
 		FragmentShaderStream.close();
 	}
-
+	else {
+		FragmentShaderCode = Default_FragmentShaderCode.str();
+		printf("Using default fragment shader\n");
+	}
 	GLint Result = GL_FALSE;
 	int InfoLogLength;
 

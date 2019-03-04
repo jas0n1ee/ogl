@@ -23,8 +23,8 @@ using namespace glm;
 static GLubyte *pixels = NULL;
 static const GLenum FORMAT = GL_RGBA;
 static const GLuint FORMAT_NBYTES = 4;
-static const unsigned int HEIGHT = 768;
-static const unsigned int WIDTH = 1024;
+static const unsigned int HEIGHT = 1080;
+static const unsigned int WIDTH = 1920;
 static unsigned int nscreenshots = 0;
 static unsigned int time;
 
@@ -120,9 +120,9 @@ int main(int argc, char* argv[])
 	
 	pixels = new GLubyte[FORMAT_NBYTES * WIDTH * HEIGHT];
 	std::vector<GLuint> Texture;
-	std::vector<std::vector<glm::vec3>>vertices;
-	std::vector<std::vector<glm::vec2>> uvs;
-	std::vector<std::vector<glm::vec3>> normals;
+	std::vector<std::vector<glm::vec3> >vertices;
+	std::vector<std::vector<glm::vec2> > uvs;
+	std::vector<std::vector<glm::vec3> > normals;
 
 	glm::mat4 ViewMatrix;
 	glm::mat4 ProjectionMatrix;
@@ -162,6 +162,8 @@ int main(int argc, char* argv[])
 	}
 	frames--;
 	glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
+	bool record_mode = false;
+	float last_R_press = 0;
 	do {
 	// Load the texture
 //	GLuint Texture = loadDDS("uvmap.DDS");
@@ -192,26 +194,26 @@ int main(int argc, char* argv[])
 		glUseProgram(programID);
 
 		// Compute the MVP matrix from keyboard and mouse input
-		//computeMatricesFromInputs();
-		//glm::mat4 ProjectionMatrix = getProjectionMatrix();
+		computeMatricesFromInputs();
+		glm::mat4 ProjectionMatrix = getProjectionMatrix();
 		
-		//glm::mat4 ViewMatrix = getViewMatrix();
-		int speed_factor = 100;
-		float step = 2 * 3.1415 / speed_factor;
-		float x_scale = 0.2;
-		float y_scal2 = 0.2;
-		float x_offset = 0;
-		float y_offset = 0;
-		float z_offset = 0;
-		ViewMatrix = glm::lookAt(
-			glm::vec3(x_scale * cos((i % speed_factor)*step) + x_offset, 
-						y_scal2 * sin((i % speed_factor)*step) + y_offset, 
-						0 + z_offset),// Camera is here
-			glm::vec3(x_scale * cos((i % speed_factor)*step) + x_offset, 
-						y_scal2 * sin((i % speed_factor)*step) + y_offset,
-						0 + z_offset) + glm::vec3(0, 0, -1), // and looks here : at the same position, plus "direction"
-			glm::vec3(0, 1, 0)                  // Head is up (set to 0,-1,0 to look upside-down)
-		);
+		glm::mat4 ViewMatrix = getViewMatrix();
+		//int speed_factor = 100;
+		//float step = 2 * 3.1415 / speed_factor;
+		//float x_scale = 0.2;
+		//float y_scal2 = 0.2;
+		//float x_offset = 0;
+		//float y_offset = 0;
+		//float z_offset = 0;
+		//ViewMatrix = glm::lookAt(
+		//	glm::vec3(x_scale * cos((i % speed_factor)*step) + x_offset, 
+		//				y_scal2 * sin((i % speed_factor)*step) + y_offset, 
+		//				0 + z_offset),// Camera is here
+		//	glm::vec3(x_scale * cos((i % speed_factor)*step) + x_offset, 
+		//				y_scal2 * sin((i % speed_factor)*step) + y_offset,
+		//				0 + z_offset) + glm::vec3(0, 0, -1), // and looks here : at the same position, plus "direction"
+		//	glm::vec3(0, 1, 0)                  // Head is up (set to 0,-1,0 to look upside-down)
+		//);
 		glm::mat4 ModelMatrix = glm::mat4(1);
 		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
@@ -258,13 +260,22 @@ int main(int argc, char* argv[])
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+		if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+			if (glfwGetTime() - last_R_press > 5) {
+				record_mode = !record_mode;
+				last_R_press = glfwGetTime();
+			}
+		}
 		if (glfwGetTime() - lasttime > 0.03) {
 			lasttime = glfwGetTime();
 			i++;
 			glReadPixels(0, 0, WIDTH, HEIGHT, FORMAT, GL_UNSIGNED_BYTE, pixels);
-			create_ppm("tmp", nscreenshots, WIDTH, HEIGHT, 255, FORMAT_NBYTES, pixels);
-			nscreenshots++;
+			if (record_mode) {
+				create_ppm("tmp", nscreenshots, WIDTH, HEIGHT, 255, FORMAT_NBYTES, pixels);
+				nscreenshots++;
+			}
 		}
+
 	} // Check if the ESC key was pressed or the window was closed
 	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
 		   glfwWindowShouldClose(window) == 0 );

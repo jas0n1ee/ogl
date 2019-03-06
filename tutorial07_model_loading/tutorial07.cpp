@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
-#include <cstring>
+#include <string>
+#include <iostream>
 // Include GLEW
 #include <GL/glew.h>
 
@@ -26,7 +27,6 @@ static const GLuint FORMAT_NBYTES = 4;
 static const unsigned int HEIGHT = 1080;
 static const unsigned int WIDTH = 1920;
 static unsigned int nscreenshots = 0;
-static unsigned int time;
 
 
 static void create_ppm(char *prefix, int frame_id, unsigned int width, unsigned int height,
@@ -48,6 +48,10 @@ static void create_ppm(char *prefix, int frame_id, unsigned int width, unsigned 
 }
 int main(int argc, char* argv[])
 {
+    std::string arg0 = argv[0];
+    std::size_t found = arg0.find_last_of("/\\");
+    std::string path = arg0.substr(0,found);
+    std::cout<<path<<std::endl;
 	// Initialise GLFW
 	if( !glfwInit() )
 	{
@@ -110,6 +114,7 @@ int main(int argc, char* argv[])
 
 	// Get a handle for our "MVP" uniform
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+    glfwSetCursorPos(window, WIDTH /2, HEIGHT/2);
 	int i = 1;
 	int frames = argc > 1 ? atoi(argv[1]) : 2147483647;
 	double lasttime = glfwGetTime();
@@ -139,14 +144,14 @@ int main(int argc, char* argv[])
 
 	for (int i = 0; i < frames; i++) {
 		char tex_filename[50];
-		sprintf(tex_filename, "%06d.bmp", i%frames + 1);
+		sprintf(tex_filename, "%s/%06d.bmp", path.c_str(), i%frames + 1);
 		GLuint t_texture = loadBMP_custom(tex_filename);
 		if (!t_texture) {
 			frames = i;
 			break;
 		}
 		char obj_filename[50];
-		sprintf(obj_filename, "%06d.obj", i%frames + 1);
+		sprintf(obj_filename, "%s/%06d.obj", path.c_str(), i%frames + 1);
 		std::vector<glm::vec3> t_vertices;
 		std::vector<glm::vec2> t_uvs;
 		std::vector<glm::vec3> t_normals;

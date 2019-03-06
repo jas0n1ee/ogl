@@ -161,9 +161,9 @@ int main(int argc, char* argv[])
 		normals.push_back(t_normals);
 	}
 	frames--;
-	glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
 	bool record_mode = false;
 	float last_R_press = 0;
+	glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
 	do {
 	// Load the texture
 //	GLuint Texture = loadDDS("uvmap.DDS");
@@ -275,7 +275,8 @@ int main(int argc, char* argv[])
 				nscreenshots++;
 			}
 		}
-
+		glDeleteBuffers(1, &vertexbuffer);
+		glDeleteBuffers(1, &uvbuffer);
 	} // Check if the ESC key was pressed or the window was closed
 	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
 		   glfwWindowShouldClose(window) == 0 );

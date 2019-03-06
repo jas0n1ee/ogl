@@ -101,14 +101,14 @@ void computeMatricesFromInputs(){
 	if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS) {
 		if (glfwGetTime() - last_F1_press > 0.5) {
 			if (!spinmode) {		// save current angle and position
-				last_horizontalAngel = horizontalAngle;
-				last_verticalAngle = verticalAngle;
-				last_pos = position;
+				//last_horizontalAngel = horizontalAngle;
+				//last_verticalAngle = verticalAngle;
+				//last_pos = position;
 			}
 			else {
-				horizontalAngle = last_horizontalAngel;
-				verticalAngle = last_verticalAngle;
-				position = last_pos;
+				//horizontalAngle = last_horizontalAngel;
+				//verticalAngle = last_verticalAngle;
+				//position = last_pos;
 				cnt = 0;
 			}
 			spinmode = !spinmode;

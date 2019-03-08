@@ -123,8 +123,8 @@ void computeMatricesFromInputs(){
 		}
 		int speed_factor = 100;
 		float step = 2 * 3.1415 / speed_factor;
-		float x_scale = 0.2;
-		float y_scal2 = 0.2;
+		float x_scale = 0.05;
+		float y_scal2 = 0.05;
 		float x_offset = 0;
 		float y_offset = 0;
 		float z_offset = 0;

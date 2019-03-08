@@ -46,11 +46,33 @@ static void create_ppm(char *prefix, int frame_id, unsigned int width, unsigned 
 	}
 	fclose(f);
 }
+
+static void create_bin(char *prefix, int frame_id, unsigned int width, unsigned int height,
+	unsigned int color_max, unsigned int pixel_nbytes, GLubyte *pixels) {
+	size_t i, j, k, cur;
+	enum Constants { max_filename = 256 };
+	char filename[max_filename];
+	snprintf(filename, max_filename, "%s%d.bin", prefix, frame_id);
+	FILE *f = fopen(filename, "wb");
+	fwrite(&height, sizeof(height), 1, f);
+	fwrite(&width, sizeof(width), 1, f);
+	fwrite(&pixel_nbytes, sizeof(pixel_nbytes), 1, f);
+	fwrite(pixels, sizeof(pixels[0]), width * height * pixel_nbytes, f);
+	//for (i = 0; i < height; i++) {
+	//	for (j = 0; j < width; j++) {
+	//		cur = pixel_nbytes * ((height - i - 1) * width + j);
+	//		fwrite(&pixels[cur], sizeof(pixels[cur]), 3, f);
+	//		fprintf(f, "%3d %3d %3d ", pixels[cur], pixels[cur + 1], pixels[cur + 2]);
+	//	}
+	//	fprintf(f, "\n");
+	//}
+	fclose(f);
+}
 int main(int argc, char* argv[])
 {
     std::string arg0 = argv[0];
     std::size_t found = arg0.find_last_of("/\\");
-    std::string path = arg0.substr(0,found);
+    std::string path = arg0.substr(0,found+1);
     std::cout<<path<<std::endl;
 	// Initialise GLFW
 	if( !glfwInit() )
@@ -144,14 +166,14 @@ int main(int argc, char* argv[])
 
 	for (int i = 0; i < frames; i++) {
 		char tex_filename[50];
-		sprintf(tex_filename, "%s/%06d.bmp", path.c_str(), i%frames + 1);
+		sprintf(tex_filename, "%s%06d.bmp", path.c_str(), i%frames + 1);
 		GLuint t_texture = loadBMP_custom(tex_filename);
 		if (!t_texture) {
 			frames = i;
 			break;
 		}
 		char obj_filename[50];
-		sprintf(obj_filename, "%s/%06d.obj", path.c_str(), i%frames + 1);
+		sprintf(obj_filename, "%s%06d.obj", path.c_str(), i%frames + 1);
 		std::vector<glm::vec3> t_vertices;
 		std::vector<glm::vec2> t_uvs;
 		std::vector<glm::vec3> t_normals;
@@ -165,9 +187,12 @@ int main(int argc, char* argv[])
 		uvs.push_back(t_uvs);
 		normals.push_back(t_normals);
 	}
-	frames--;
+	if (frames == 0)
+		return 0;
 	bool record_mode = false;
 	float last_R_press = 0;
+	bool record_Bmode = false;
+	float last_B_press = 0;
 	glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
 	do {
 	// Load the texture
@@ -271,12 +296,22 @@ int main(int argc, char* argv[])
 				last_R_press = glfwGetTime();
 			}
 		}
+		if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+			if (glfwGetTime() - last_R_press > 1) {
+				record_Bmode = !record_Bmode;
+				last_B_press = glfwGetTime();
+			}
+		}
 		if (glfwGetTime() - lasttime > 0.03) {
 			lasttime = glfwGetTime();
 			i++;
 			glReadPixels(0, 0, WIDTH, HEIGHT, FORMAT, GL_UNSIGNED_BYTE, pixels);
 			if (record_mode) {
 				create_ppm("tmp", nscreenshots, WIDTH, HEIGHT, 255, FORMAT_NBYTES, pixels);
+				nscreenshots++;
+			}
+			else if (record_Bmode) {
+				create_bin("tmp", nscreenshots, WIDTH, HEIGHT, 255, FORMAT_NBYTES, pixels);
 				nscreenshots++;
 			}
 		}

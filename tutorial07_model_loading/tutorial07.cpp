@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <fstream>
 // Include GLEW
 #include <GL/glew.h>
 
@@ -21,6 +22,8 @@ using namespace glm;
 #include <common/controls.hpp>
 #include <common/objloader.hpp>
 
+
+#include <thread>
 static GLubyte *pixels = NULL;
 static const GLenum FORMAT = GL_RGBA;
 static const GLuint FORMAT_NBYTES = 4;
@@ -68,12 +71,33 @@ static void create_bin(char *prefix, int frame_id, unsigned int width, unsigned 
 	//}
 	fclose(f);
 }
+
+void thread_load_mesh(std::string path, int id, int frames, int cores, std::vector<GLuint> &Texture, std::vector<std::vector<glm::vec3> > &vertices, std::vector<std::vector<glm::vec2> > &uvs, std::vector<std::vector<glm::vec3> > &normals) {
+	for (int i = id; i < frames; i += cores) {
+		char tex_filename[50];
+		sprintf(tex_filename, "%s%06d.bmp", path.c_str(), i + 1);
+		GLuint t_texture = loadBMP_custom(tex_filename);
+
+		char obj_filename[50];
+		sprintf(obj_filename, "%s%06d.obj", path.c_str(), i + 1);
+		std::vector<glm::vec3> t_vertices;
+		std::vector<glm::vec2> t_uvs;
+		std::vector<glm::vec3> t_normals;
+		bool res = loadOBJ(obj_filename, t_vertices, t_uvs, t_normals);
+
+		Texture[i] = std::move(t_texture);
+		vertices[i] = std::move(t_vertices);
+		uvs[i] = std::move(t_uvs);
+		normals[i] = std::move(t_normals);
+	}
+}
 int main(int argc, char* argv[])
 {
     std::string arg0 = argv[0];
     std::size_t found = arg0.find_last_of("/\\");
     std::string path = arg0.substr(0,found+1);
     std::cout<<path<<std::endl;
+	unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
 	// Initialise GLFW
 	if( !glfwInit() )
 	{
@@ -166,29 +190,31 @@ int main(int argc, char* argv[])
 
 	for (int i = 0; i < frames; i++) {
 		char tex_filename[50];
-		sprintf(tex_filename, "%s%06d.bmp", path.c_str(), i%frames + 1);
-		GLuint t_texture = loadBMP_custom(tex_filename);
-		if (!t_texture) {
-			frames = i;
-			break;
-		}
+		sprintf(tex_filename, "%s%06d.bmp", path.c_str(), i + 1);
 		char obj_filename[50];
-		sprintf(obj_filename, "%s%06d.obj", path.c_str(), i%frames + 1);
-		std::vector<glm::vec3> t_vertices;
-		std::vector<glm::vec2> t_uvs;
-		std::vector<glm::vec3> t_normals;
-		bool res = loadOBJ(obj_filename, t_vertices, t_uvs, t_normals);
-		if (!res) {
+		sprintf(obj_filename, "%s%06d.obj", path.c_str(), i + 1);
+		std::ifstream ft(tex_filename);
+		std::ifstream fo(obj_filename);
+		if (! ft.good() || ! fo.good()) {
 			frames = i;
 			break;
 		}
-		Texture.push_back(t_texture);
-		vertices.push_back(t_vertices);
-		uvs.push_back(t_uvs);
-		normals.push_back(t_normals);
 	}
 	if (frames == 0)
 		return 0;
+	Texture.resize(frames);
+	vertices.resize(frames);
+	uvs.resize(frames);
+	normals.resize(frames);
+
+	std::vector<std::thread> thread_list;
+	for (int i = 0; i < concurentThreadsSupported; i++)  {
+		thread_list.push_back(std::thread(thread_load_mesh, path, i, frames, concurentThreadsSupported, std::ref(Texture), std::ref(vertices), std::ref(uvs), std::ref(normals)));
+	}
+
+	for (int i = 0; i < thread_list.size(); i++)
+		thread_list[i].join();
+
 	bool record_mode = false;
 	float last_R_press = 0;
 	bool record_Bmode = false;

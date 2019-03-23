@@ -22,6 +22,7 @@ using namespace glm;
 #include <common/objloader.hpp>
 
 static GLubyte *pixels = NULL;
+static GLfloat *depth_pixels = NULL;
 static const GLenum FORMAT = GL_RGBA;
 static const GLuint FORMAT_NBYTES = 4;
 static const unsigned int HEIGHT = 1080;
@@ -58,14 +59,16 @@ static void create_bin(char *prefix, int frame_id, unsigned int width, unsigned 
 	fwrite(&width, sizeof(width), 1, f);
 	fwrite(&pixel_nbytes, sizeof(pixel_nbytes), 1, f);
 	fwrite(pixels, sizeof(pixels[0]), width * height * pixel_nbytes, f);
-	//for (i = 0; i < height; i++) {
-	//	for (j = 0; j < width; j++) {
-	//		cur = pixel_nbytes * ((height - i - 1) * width + j);
-	//		fwrite(&pixels[cur], sizeof(pixels[cur]), 3, f);
-	//		fprintf(f, "%3d %3d %3d ", pixels[cur], pixels[cur + 1], pixels[cur + 2]);
-	//	}
-	//	fprintf(f, "\n");
-	//}
+	fclose(f);
+}static void create_depth_bin(char *prefix, int frame_id, unsigned int width, unsigned int height, GLfloat *pixels) {
+	size_t i, j, k, cur;
+	enum Constants { max_filename = 256 };
+	char filename[max_filename];
+	snprintf(filename, max_filename, "%sdepth%d.bin", prefix, frame_id);
+	FILE *f = fopen(filename, "wb");
+	fwrite(&height, sizeof(height), 1, f);
+	fwrite(&width, sizeof(width), 1, f);
+	fwrite(pixels, sizeof(pixels[0]), width * height, f);
 	fclose(f);
 }
 int main(int argc, char* argv[])
@@ -140,12 +143,14 @@ int main(int argc, char* argv[])
 	int i = 1;
 	int frames = argc > 1 ? atoi(argv[1]) : 2147483647;
 	double lasttime = glfwGetTime();
+    bool pause = false;
 	GLuint vertexbuffer;
 
 
 	GLuint uvbuffer;
 	
 	pixels = new GLubyte[FORMAT_NBYTES * WIDTH * HEIGHT];
+    depth_pixels = new GLfloat[WIDTH*HEIGHT];
 	std::vector<GLuint> Texture;
 	std::vector<std::vector<glm::vec3> >vertices;
 	std::vector<std::vector<glm::vec2> > uvs;
@@ -290,6 +295,12 @@ int main(int argc, char* argv[])
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+        if (glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
+            pause = true;
+        }
+        if (glfwGetKey(window, GLFW_KEY_F3) == GLFW_RELEASE) {
+            pause = false;
+        }
 		if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
 			if (glfwGetTime() - last_R_press > 5) {
 				record_mode = !record_mode;
@@ -297,14 +308,15 @@ int main(int argc, char* argv[])
 			}
 		}
 		if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-			if (glfwGetTime() - last_R_press > 1) {
+			if (glfwGetTime() - last_B_press > 1) {
 				record_Bmode = !record_Bmode;
 				last_B_press = glfwGetTime();
 			}
 		}
 		if (glfwGetTime() - lasttime > 0.03) {
 			lasttime = glfwGetTime();
-			i++;
+            if (!pause)
+                i++;
 			glReadPixels(0, 0, WIDTH, HEIGHT, FORMAT, GL_UNSIGNED_BYTE, pixels);
 			if (record_mode) {
 				create_ppm("tmp", nscreenshots, WIDTH, HEIGHT, 255, FORMAT_NBYTES, pixels);
@@ -315,13 +327,18 @@ int main(int argc, char* argv[])
 				nscreenshots++;
 			}
 		}
+        if (glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS) {
+            glReadPixels(0, 0, WIDTH, HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT, depth_pixels);
+            create_depth_bin("tmp", nscreenshots, WIDTH, HEIGHT, depth_pixels);
+        }
 		glDeleteBuffers(1, &vertexbuffer);
 		glDeleteBuffers(1, &uvbuffer);
 	} // Check if the ESC key was pressed or the window was closed
 	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
 		   glfwWindowShouldClose(window) == 0 );
 
-	delete(pixels);
+	delete [] pixels;
+    delete [] depth_pixels;
 	// Cleanup VBO and shader
 	glDeleteBuffers(1, &vertexbuffer);
 	glDeleteBuffers(1, &uvbuffer);

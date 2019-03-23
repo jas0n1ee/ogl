@@ -115,6 +115,12 @@ void computeMatricesFromInputs(){
 			last_F1_press = glfwGetTime();
 		}
 	}
+    if (glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
+        spinmode = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_F3) == GLFW_RELEASE) {
+        spinmode = false;
+    }
 	if (spinmode) {
 		if (glfwGetTime() - cnt_lastTime > 0.03) {
 			cnt_lastTime = glfwGetTime();

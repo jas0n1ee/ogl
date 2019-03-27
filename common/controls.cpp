@@ -26,9 +26,9 @@ float horizontalAngle = 3.14f;
 // Initial vertical angle : none
 float verticalAngle = 0.0f;
 // Initial Field of View
-float initialFoV = 45.0f;
+float initialFoV = 60.0f;
 
-float speed = 3.0f; // 3 units / second
+float speed = 0.5f; // 3 units / second
 float mouseSpeed = 0.005f;
 
 int cnt = 0;
@@ -98,6 +98,12 @@ void computeMatricesFromInputs(){
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
 		position += -up * deltaTime * speed;
 	}
+	//if (glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
+	//	spinmode = true;
+	//}
+	//if (glfwGetKey(window, GLFW_KEY_F3) == GLFW_RELEASE) {
+	//	spinmode = false;
+	//}
 	if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS) {
 		if (glfwGetTime() - last_F1_press > 0.5) {
 			if (!spinmode) {		// save current angle and position
@@ -115,22 +121,22 @@ void computeMatricesFromInputs(){
 			last_F1_press = glfwGetTime();
 		}
 	}
-    if (glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
-        spinmode = true;
-    }
-    if (glfwGetKey(window, GLFW_KEY_F3) == GLFW_RELEASE) {
-        spinmode = false;
-    }
+
+	if (glfwGetKey(window, GLFW_KEY_F10) == GLFW_PRESS) {
+		position = glm::vec3(0, 0, 0);
+		horizontalAngle = 3.14f;
+		verticalAngle = 0.0f;
+	}
 	if (spinmode) {
 		if (glfwGetTime() - cnt_lastTime > 0.03) {
 			cnt_lastTime = glfwGetTime();
 			cnt++;
 
 		}
-		int speed_factor = 100;
+		int speed_factor = 60;
 		float step = 2 * 3.1415 / speed_factor;
-		float x_scale = 0.05;
-		float y_scal2 = 0.05;
+		float x_scale = 0.2;
+		float y_scal2 = 0.2;
 		float x_offset = 0;
 		float y_offset = 0;
 		float z_offset = 0;
@@ -154,7 +160,7 @@ void computeMatricesFromInputs(){
 		float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 
 		// Projection matrix : 45?Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-		ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);
+		ProjectionMatrix = glm::perspective(glm::radians(FoV), 16.0f / 9.0f, 0.1f, 100.0f);
 		// Camera matrix
 		ViewMatrix = glm::lookAt(
 			position,           // Camera is here
